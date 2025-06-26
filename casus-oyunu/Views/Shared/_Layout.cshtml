@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - casus_oyunu</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/casus_oyunu.styles.css" asp-append-version="true" />
+</head>
+<body class="spy-bg" style="min-height:100vh;">
+    <nav class="navbar navbar-expand-lg navbar-dark spy-navbar mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand spy-title" href="/Game/Index">🕵️ casusmusunnesin?</a>
+            <!-- Menüde başka link yok, Home/Privacy kaldırıldı -->
+        </div>
+    </nav>
+    <main class="container-fluid px-2 px-md-5">
+        @RenderBody()
+    </main>
+    @RenderSection("Scripts", required: false)
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

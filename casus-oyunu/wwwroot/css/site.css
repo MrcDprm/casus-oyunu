@@ -1,0 +1,142 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Ajan temalı ve responsive genel stiller */
+html, body {
+    height: 100%;
+}
+.spy-bg {
+    background: #181c23 !important;
+    color: #fff !important;
+    min-height: 100vh;
+}
+.spy-navbar {
+    background: #181c23 !important;
+    border-bottom: 2px solid #e63946;
+}
+.spy-title {
+    color: #e63946 !important;
+    font-family: 'Segoe UI', monospace;
+    letter-spacing: 2px;
+}
+main.container-fluid {
+    background: #23272f !important;
+    border-radius: 12px;
+    box-shadow: 0 0 24px #0008;
+    padding: 2rem 2.5vw;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    max-width: 900px;
+}
+.spy-list {
+    background: #181c23;
+    color: #a8dadc;
+}
+.form-control, .form-select {
+    background: #181c23;
+    color: #fff;
+    border: 1px solid #495057;
+}
+.btn-danger {
+    background: #e63946;
+    border: none;
+}
+.btn-primary {
+    background: #457b9d;
+    border: none;
+}
+.btn-secondary {
+    background: #22223b;
+    border: none;
+}
+.spy-card {
+    background: #181c23;
+    border: 1px solid #495057;
+}
+.spy-word {
+    background: #457b9d;
+    color: #fff;
+    font-size: 1.3em;
+    letter-spacing: 1px;
+}
+@media (max-width: 768px) {
+    main.container-fluid {
+        padding: 1rem 0.5rem;
+        margin-top: 1rem;
+    }
+    .spy-title {
+        font-size: 1.2rem;
+    }
+}
+@media (max-width: 600px) {
+    .spy-bg, main.container-fluid {
+        padding: 1rem !important;
+    }
+    .spy-title {
+        font-size: 1.1rem;
+    }
+}
+
+/* Spy temalı accordion */
+.accordion.spy-accordion .accordion-item {
+    background: #181c23;
+    border: 1px solid #495057;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.accordion.spy-accordion .accordion-header .accordion-button {
+    background: #23272f;
+    color: #e63946;
+    font-weight: bold;
+    border-bottom: 1px solid #495057;
+    box-shadow: none;
+    font-size: 1rem;
+    padding: 0.4em 1em 0.4em 0.8em;
+    min-height: 36px;
+}
+.accordion.spy-accordion .accordion-header .accordion-button:not(.collapsed) {
+    background: #22223b;
+    color: #fff;
+    border-bottom: 2px solid #e63946;
+}
+.accordion.spy-accordion .accordion-body {
+    background: #181c23;
+    color: #fff;
+    padding: 0.5rem 0.5rem 0.3rem 0.5rem;
+}
+.accordion.spy-accordion .form-check-label {
+    color: #a8dadc;
+    font-size: 0.97em;
+}
+.accordion.spy-accordion .form-check-input:checked {
+    background-color: #e63946;
+    border-color: #e63946;
+}
+/* Accordion içindeki butonlar Bootstrap .btn-sm ile aynı boyutta olacak, özel boyut kaldırıldı */
+/* Kelime kutuları */
+.accordion.spy-accordion .form-check {
+    background: #23272f;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    padding: 0.18em 0.5em;
+}

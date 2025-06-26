@@ -1,0 +1,327 @@
+@using casus_oyunu.Models
+@{
+    ViewBag.Title = "casusmusunnesin? - Başla";
+    var categories = ViewBag.Categories as List<casus_oyunu.Models.Category>;
+    var players = ViewBag.Players as List<casus_oyunu.Models.Player> ?? new List<casus_oyunu.Models.Player>();
+    var selectedCategories = ViewBag.SelectedCategories as List<string> ?? new List<string>();
+    var selectedWords = ViewBag.SelectedWords as List<string> ?? new List<string>();
+    int gameDuration = ViewBag.GameDuration ?? 8;
+    string error = ViewBag.Error as string;
+}
+
+<div class="spy-bg mt-3 p-3 p-md-4 rounded shadow-sm mx-auto" style="max-width: 800px;">
+    <h2 class="text-center spy-title mb-4">🕵️ casusmusunnesin?</h2>
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+    @if (!string.IsNullOrEmpty(ViewBag.FinishMessage as string))
+    {
+        <div class="alert alert-info text-center">@ViewBag.FinishMessage</div>
+    }
+    
+    <!-- Oyuncu Ekleme -->
+    <form asp-action="AddPlayer" method="post" class="mb-3 d-flex flex-column flex-md-row gap-2" id="addPlayerForm">
+        <input type="text" name="playerName" class="form-control" placeholder="Oyuncu adı" id="playerNameInput" required />
+        <input type="hidden" name="categoryNames" id="addPlayerCategoryNames" value="@string.Join(",", selectedCategories)" />
+        <input type="hidden" name="wordNames" id="addPlayerWordNames" value="@string.Join(",", selectedWords)" />
+        <input type="hidden" name="gameDuration" id="addPlayerGameDuration" value="@gameDuration" />
+        <button type="submit" class="btn btn-danger flex-shrink-0">Oyuncu Ekle</button>
+    </form>
+    <div id="playerNameError" class="text-danger small mt-1" style="display:none;">Oyuncu adı boş bırakılamaz.</div>
+    
+    <!-- Oyuncu Listesi -->
+    <div class="mb-3">
+        <strong>Oyuncular:</strong>
+        <ul class="list-group list-group-flush">
+            @for (int i = 0; i < players.Count; i++)
+            {
+                <li class="list-group-item spy-list d-flex justify-content-between align-items-center">
+                    <span>@players[i].Name</span>
+                    <form asp-action="RemovePlayer" method="post" style="display:inline;">
+                        <input type="hidden" name="playerIndex" value="@i" />
+                        <button type="submit" class="btn btn-sm btn-danger ms-2">Sil</button>
+                    </form>
+                </li>
+            }
+        </ul>
+    </div>
+    
+    <!-- Oyun Süresi Seçici -->
+    <div class="mb-3">
+        <label class="form-label"><strong>Oyun Süresi:</strong></label>
+        <div class="d-flex align-items-center gap-2">
+            <input type="number" id="gameDurationMinutes" name="gameDurationMinutes" value="@((@gameDuration)/60)" min="0" max="12" class="form-control text-center" style="max-width: 80px;" />
+            <span>dakika</span>
+            <input type="number" id="gameDurationSeconds" name="gameDurationSeconds" value="@(@gameDuration%60)" min="0" max="59" class="form-control text-center" style="max-width: 80px;" />
+            <span>saniye</span>
+        </div>
+        <div class="mt-2">
+            <span class="text-muted">Seçilen süre: <span id="durationDisplay">@gameDuration</span> saniye</span>
+        </div>
+        <input type="hidden" name="gameDuration" id="gameDuration" value="@gameDuration" />
+    </div>
+    
+    <!-- Kategori Seçimi -->
+    <div class="mb-3">
+        <label class="form-label"><strong>Kategoriler:</strong></label>
+        <div class="mb-2">
+            <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="selectAllCategories()">Tümünü Seç</button>
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="clearAllCategories()">Seçimi Temizle</button>
+        </div>
+        <div class="row">
+            @foreach (var category in categories)
+            {
+                <div class="col-12 col-md-6 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input category-checkbox" type="checkbox" value="@category.Name" id="cat-@category.Name.Replace(" ","")" 
+                               @(selectedCategories.Contains(category.Name) ? "checked" : "") />
+                        <label class="form-check-label" for="cat-@category.Name.Replace(" ","")">
+                            @category.Name
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- Kelime Seçimi -->
+    <div class="mb-3" id="wordSelection" style="display: none;">
+        <label class="form-label"><strong>Seçilen Kategorilerin Kelimeleri:</strong></label>
+        <div id="wordCheckboxes" class="row">
+            <!-- Dinamik olarak doldurulacak -->
+        </div>
+    </div>
+    
+    <!-- Seçilen Kelimeler Özeti -->
+    <div class="mb-3" id="selectedWordsSummary" style="display: none;">
+        <label class="form-label"><strong>Seçilen Kelimeler (@selectedWords.Count):</strong></label>
+        <div class="alert alert-info">
+            <span id="selectedWordsList">@string.Join(", ", selectedWords)</span>
+        </div>
+    </div>
+    
+    <!-- Oyun Başlatma -->
+    <form asp-action="SetGameOptions" method="post" id="gameOptionsForm">
+        <input type="hidden" name="gameDuration" id="gameDurationHidden" value="@gameDuration" />
+        <input type="hidden" name="categoryNames" id="categoryNamesHidden" value="@string.Join(",", selectedCategories)" />
+        <input type="hidden" name="wordNames" id="wordNamesHidden" value="@string.Join(",", selectedWords)" />
+        <button type="submit" class="btn btn-warning w-100 mb-2">Seçimleri Kaydet</button>
+    </form>
+    
+    <form asp-action="StartGame" method="post">
+        <button type="submit" class="btn btn-primary w-100" id="startGameBtn" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Oyunu başlatmak için seçimin kaydedilmesi lazım">Oyunu Başlat</button>
+        <div id="startGameWarning" class="text-warning text-center small mt-1" style="display:none;">Oyunu başlatmak için seçimin kaydedilmesi lazım.</div>
+    </form>
+    
+    <form asp-action="ResetGame" method="post" class="mt-3">
+        <button type="submit" class="btn btn-secondary w-100">Sıfırla</button>
+    </form>
+</div>
+
+<script>
+    // Sadece yeni oyun başlatıldığında veya ana ekrana dönüldüğünde selectionsSaved flag'ini temizle
+    if (window.performance && window.performance.navigation && window.performance.navigation.type === 1) {
+        // Sayfa yenileme değil, yeni yükleme ise temizle
+        localStorage.removeItem('spyfall_selections_saved');
+    }
+
+    // Kategori verileri
+    const categories = @Html.Raw(Json.Serialize(categories));
+    let selectedCategories = @Html.Raw(Json.Serialize(selectedCategories));
+    let selectedWords = @Html.Raw(Json.Serialize(selectedWords));
+    
+    // Oyun süresi dakika/saniye olarak ayarlanacak
+    function updateGameDuration() {
+        let minTotal = 10; // 10 saniye
+        let maxTotal = 12 * 60; // 12 dakika = 720 saniye
+        let minutes = parseInt(document.getElementById('gameDurationMinutes').value) || 0;
+        let seconds = parseInt(document.getElementById('gameDurationSeconds').value) || 0;
+        let total = minutes * 60 + seconds;
+        if (total < minTotal) total = minTotal;
+        if (total > maxTotal) total = maxTotal;
+        // Güncel inputlara yansıt
+        document.getElementById('gameDuration').value = total;
+        document.getElementById('durationDisplay').textContent = total;
+        // Gerekirse inputları düzelt
+        document.getElementById('gameDurationMinutes').value = Math.floor(total/60);
+        document.getElementById('gameDurationSeconds').value = total%60;
+        updateAddPlayerFormHiddenInputs();
+    }
+    document.getElementById('gameDurationMinutes').addEventListener('input', updateGameDuration);
+    document.getElementById('gameDurationSeconds').addEventListener('input', updateGameDuration);
+    
+    // Kategori checkbox'larını dinle
+    document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateWordSelection);
+    });
+    
+    // Tüm kategorileri seç
+    function selectAllCategories() {
+        document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateWordSelection();
+    }
+    
+    // Tüm kategori seçimlerini temizle
+    function clearAllCategories() {
+        document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateWordSelection();
+    }
+    
+    // Kelime seçimini güncelle (seçili kelimeleri koru)
+    function updateWordSelection() {
+        // Önce mevcut seçili kelimeleri DOM'dan al
+        const currentCheckedWords = Array.from(document.querySelectorAll('.word-checkbox:checked')).map(cb => cb.value);
+        // selectedWords dizisini güncelle
+        selectedWords = Array.from(new Set([...selectedWords, ...currentCheckedWords]));
+
+        const selectedCats = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+        selectedCategories = selectedCats;
+        const wordContainer = document.getElementById('wordCheckboxes');
+        const wordSelection = document.getElementById('wordSelection');
+        const selectedWordsSummary = document.getElementById('selectedWordsSummary');
+        const startGameBtn = document.getElementById('startGameBtn');
+
+        if (selectedCats.length === 0) {
+            wordSelection.style.display = 'none';
+            selectedWordsSummary.style.display = 'none';
+            startGameBtn.disabled = true;
+            return;
+        }
+
+        // Bootstrap accordion ile kategori başlıkları ve kelimeler
+        let accordionHtml = `<div class='accordion spy-accordion' id='categoryAccordion'>`;
+        selectedCats.forEach((catName, idx) => {
+            const category = categories.find(c => c.name === catName);
+            if (category) {
+                const collapseId = `collapseCat${idx}`;
+                accordionHtml += `
+                <div class='accordion-item'>
+                    <h2 class='accordion-header' id='heading${idx}'>
+                        <button class='accordion-button collapsed d-flex align-items-center' type='button' data-bs-toggle='collapse' data-bs-target='#${collapseId}' aria-expanded='false' aria-controls='${collapseId}'>
+                            <span class='me-2'><strong>${catName}</strong></span>
+                            <button type='button' class='btn btn-sm btn-outline-success ms-2' onclick='event.stopPropagation();selectAllWordsForCategory("${catName.replace(/'/g, "\\'")}")'>Tümünü Seç</button>
+                            <button type='button' class='btn btn-sm btn-outline-warning ms-2' onclick='event.stopPropagation();clearAllWordsForCategory("${catName.replace(/'/g, "\\'")}")'>Seçimi Temizle</button>
+                        </button>
+                    </h2>
+                    <div id='${collapseId}' class='accordion-collapse collapse' aria-labelledby='heading${idx}' data-bs-parent='#categoryAccordion'>
+                        <div class='accordion-body'>
+                            <div>`;
+                category.words.forEach(word => {
+                    const isChecked = selectedWords.includes(word);
+                    accordionHtml += `
+                        <div class='form-check ms-3'>
+                            <input class='form-check-input word-checkbox' type='checkbox' value='${word}' data-category='${catName}' id='word-${word.replace(/\s+/g, '')}' ${isChecked ? 'checked' : ''} />
+                            <label class='form-check-label' for='word-${word.replace(/\s+/g, '')}'>${word}</label>
+                        </div>
+                    `;
+                });
+                accordionHtml += `</div></div></div></div>`;
+            }
+        });
+        accordionHtml += `</div>`;
+        wordContainer.innerHTML = accordionHtml;
+
+        wordSelection.style.display = 'block';
+
+        // Kelime checkbox'larını dinle
+        document.querySelectorAll('.word-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedWords);
+        });
+
+        updateSelectedWords();
+        updateAddPlayerFormHiddenInputs();
+    }
+    
+    // Seçilen kelimeleri güncelle (global selectedWords dizisini güncelle)
+    function updateSelectedWords() {
+        selectedWords = Array.from(document.querySelectorAll('.word-checkbox:checked')).map(cb => cb.value);
+        const selectedWordsList = document.getElementById('selectedWordsList');
+        const selectedWordsSummary = document.getElementById('selectedWordsSummary');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const categoryNamesHidden = document.getElementById('categoryNamesHidden');
+        const wordNamesHidden = document.getElementById('wordNamesHidden');
+        const gameDurationHidden = document.getElementById('gameDurationHidden');
+
+        // Hidden input'ları güncelle
+        const selectedCats = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+        categoryNamesHidden.value = selectedCats.join(',');
+        wordNamesHidden.value = selectedWords.join(',');
+        gameDurationHidden.value = document.getElementById('gameDuration').value;
+
+        selectedWordsList.textContent = selectedWords.join(', ');
+        selectedWordsSummary.style.display = selectedWords.length > 0 ? 'block' : 'none';
+
+        // Oyun başlatma butonunu aktifleştir - en az 1 kelime ve 3 oyuncu ve seçimler kaydedildiyse
+        const playerCount = @players.Count;
+        // Seçimler kaydedildiyse (SetGameOptions postlandıysa) bir flag ViewBag'den alınabilir veya localStorage ile tutulabilir
+        let selectionsSaved = false;
+        // Seçimleri kaydet butonuna basınca flag'i true yap
+        document.getElementById('gameOptionsForm').addEventListener('submit', function() {
+            selectionsSaved = true;
+            localStorage.setItem('spyfall_selections_saved', '1');
+        });
+        // Sayfa yüklendiğinde flag'i kontrol et
+        if (localStorage.getItem('spyfall_selections_saved') === '1') {
+            selectionsSaved = true;
+        } else {
+            selectionsSaved = false;
+        }
+        startGameBtn.disabled = selectedWords.length < 1 || playerCount < 3 || !selectionsSaved;
+        document.getElementById('startGameWarning').style.display = !selectionsSaved ? 'block' : 'none';
+        // Tooltip init
+        if (window.bootstrap) { var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')); tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); }); }
+        // Seçimler sıfırlanınca flag'i temizle
+        document.getElementById('gameOptionsForm').addEventListener('reset', function() {
+            selectionsSaved = false;
+            localStorage.removeItem('spyfall_selections_saved');
+        });
+        updateAddPlayerFormHiddenInputs();
+    }
+    
+    // Kategoriye özel tümünü seç/temizle fonksiyonları
+    function selectAllWordsForCategory(categoryName) {
+        document.querySelectorAll(`.word-checkbox[data-category='${categoryName}']`).forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectedWords();
+    }
+    function clearAllWordsForCategory(categoryName) {
+        document.querySelectorAll(`.word-checkbox[data-category='${categoryName}']`).forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectedWords();
+    }
+    
+    // Sayfa yüklendiğinde kelime seçimini güncelle
+    document.addEventListener('DOMContentLoaded', function() {
+        updateWordSelection();
+    });
+
+    // Kategori veya kelime seçimleri değiştiğinde oyuncu ekleme formundaki gizli inputları da güncelle
+    function updateAddPlayerFormHiddenInputs() {
+        document.getElementById('addPlayerCategoryNames').value = selectedCategories.join(',');
+        document.getElementById('addPlayerWordNames').value = selectedWords.join(',');
+        document.getElementById('addPlayerGameDuration').value = document.getElementById('gameDuration').value;
+    }
+
+    // Oyunu başlatınca flag'i temizle (yeni oyun için tekrar seçim yapılmalı)
+    document.getElementById('startGameBtn').addEventListener('click', function() {
+        localStorage.removeItem('spyfall_selections_saved');
+    });
+
+    // Oyuncu ekle formunda boş bırakılırsa uyarı göster
+    document.getElementById('addPlayerForm').addEventListener('submit', function(e) {
+        var input = document.getElementById('playerNameInput');
+        if (!input.value.trim()) {
+            document.getElementById('playerNameError').style.display = 'block';
+            e.preventDefault();
+        } else {
+            document.getElementById('playerNameError').style.display = 'none';
+        }
+    });
+</script> 
