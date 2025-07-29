@@ -1,0 +1,128 @@
+@{
+    ViewBag.Title = "Premium Özellikler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = ViewBag.User as casus_oyunu.Models.User;
+    var activeSubscription = ViewBag.ActiveSubscription as casus_oyunu.Models.UserSubscription;
+    var subscriptionTypes = ViewBag.SubscriptionTypes as dynamic[];
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="spy-bg p-4 rounded shadow-sm">
+                <h2 class="spy-title mb-4">Premium Özellikler</h2>
+                
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success">@TempData["Success"]</div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["Error"]</div>
+                }
+
+                @if (activeSubscription != null)
+                {
+                    <div class="alert alert-info">
+                        <h5>Aktif Aboneliğiniz</h5>
+                        <p><strong>Tür:</strong> @activeSubscription.Type</p>
+                        <p><strong>Başlangıç:</strong> @activeSubscription.StartDate?.ToLocalTime().ToString("g")</p>
+                        <p><strong>Bitiş:</strong> @activeSubscription.EndDate?.ToLocalTime().ToString("g")</p>
+                        <p><strong>Durum:</strong> @(activeSubscription.IsActive ? "Aktif" : "Pasif")</p>
+                        
+                        <form asp-action="CancelSubscription" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Aboneliğinizi iptal etmek istediğinizden emin misiniz?')">
+                                Aboneliği İptal Et
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <h5>Ücretsiz Hesap</h5>
+                        <p>Şu anda ücretsiz hesap kullanıyorsunuz. Premium özelliklerden yararlanmak için bir abonelik seçin.</p>
+                    </div>
+                }
+
+                <div class="row mt-4">
+                    @foreach (var plan in subscriptionTypes)
+                    {
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 @(activeSubscription?.Type == plan.Type ? "border-primary" : "")">
+                                <div class="card-header text-center">
+                                    <h5 class="card-title mb-0">@plan.Name</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <h3 class="text-primary">₺@plan.Price</h3>
+                                        <small class="text-muted">/ay</small>
+                                    </div>
+                                    <ul class="list-unstyled">
+                                        @foreach (var feature in plan.Features)
+                                        {
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                @feature
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                                <div class="card-footer text-center">
+                                    @if (activeSubscription?.Type == plan.Type)
+                                    {
+                                        <button class="btn btn-secondary" disabled>Aktif Abonelik</button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Subscribe" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="subscriptionType" value="@plan.Type" />
+                                            <button type="submit" class="btn btn-primary">
+                                                @(activeSubscription != null ? "Yükselt" : "Abone Ol")
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Premium Özellikler</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-ad text-danger me-2"></i>Reklamsız oyun deneyimi</li>
+                                    <li class="mb-2"><i class="fas fa-palette text-info me-2"></i>Özel temalar ve görünümler</li>
+                                    <li class="mb-2"><i class="fas fa-chart-bar text-success me-2"></i>Detaylı istatistikler</li>
+                                    <li class="mb-2"><i class="fas fa-trophy text-warning me-2"></i>Turnuva katılımı</li>
+                                    <li class="mb-2"><i class="fas fa-crown text-primary me-2"></i>Turnuva oluşturma (Pro)</li>
+                                    <li class="mb-2"><i class="fas fa-code text-secondary me-2"></i>API erişimi (Pro)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>İstatistikleriniz</h5>
+                            </div>
+                            <div class="card-body">
+                                <a href="@Url.Action("Statistics", "Premium")" class="btn btn-outline-primary">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    İstatistiklerimi Görüntüle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

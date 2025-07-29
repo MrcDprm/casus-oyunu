@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0d6efd" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="casusmusunnesin?" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#0d6efd" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <title>@ViewBag.Title - casusmusunnesin?</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="apple-touch-icon" href="~/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/favicon-16x16.png" />
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" as="script" />
+    <link rel="preload" href="~/js/site.js" as="script" />
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
+        <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-user-secret me-2"></i>
+                    <span class="d-none d-sm-inline">casusmusunnesin?</span>
+                    <span class="d-sm-none">casus?</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Ana Sayfa</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Room" asp-action="Create">
+                                    <i class="fas fa-plus me-1 d-none d-sm-inline"></i>
+                                    <span class="d-none d-md-inline">Oyun Kur</span>
+                                    <span class="d-md-none">Kur</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Room" asp-action="Join">
+                                    <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>
+                                    <span class="d-none d-md-inline">Oyuna Katıl</span>
+                                    <span class="d-md-none">Katıl</span>
+                                </a>
+                            </li>
+                            <li class="nav-item d-none d-lg-block">
+                                <a class="nav-link text-light" asp-area="" asp-controller="Premium" asp-action="Index">
+                                    <i class="fas fa-crown text-warning"></i> Premium
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-light d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user me-1"></i>
+                                    <span class="d-none d-sm-inline">@User.Identity.Name</span>
+                                    <span class="d-sm-none">@User.Identity.Name.Substring(0, Math.Min(10, User.Identity.Name.Length))</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item d-flex align-items-center" asp-controller="Premium" asp-action="Statistics">
+                                        <i class="fas fa-chart-line me-2"></i> İstatistiklerim
+                                    </a></li>
+                                    <li class="d-lg-none"><a class="dropdown-item d-flex align-items-center" asp-controller="Premium" asp-action="Index">
+                                        <i class="fas fa-crown text-warning me-2"></i> Premium
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item d-flex align-items-center">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Room" asp-action="Join">
+                                    <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>
+                                    <span class="d-none d-md-inline">Oyuna Katıl</span>
+                                    <span class="d-md-none">Katıl</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Login">
+                                    <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>
+                                    <span class="d-none d-md-inline">Giriş Yap</span>
+                                    <span class="d-md-none">Giriş</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Register">
+                                    <i class="fas fa-user-plus me-1 d-none d-sm-inline"></i>
+                                    <span class="d-none d-md-inline">Kayıt Ol</span>
+                                    <span class="d-md-none">Kayıt</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+        </div>
+    </nav>
+    </header>
+    
+    <div class="container-fluid px-3 px-md-4">
+        <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-auto">
+        <div class="container-fluid px-3 px-md-4">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-6 text-center text-md-start">
+                    &copy; 2025 - casusmusunnesin?
+                </div>
+                <div class="col-12 col-md-6 text-center text-md-end">
+                    <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none">
+                        <i class="fas fa-shield-alt me-1"></i>Gizlilik
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Toast Messages from TempData -->
+    @if (TempData["Success"] != null)
+    {
+        <div data-toast="success" style="display: none;">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div data-toast="error" style="display: none;">@TempData["Error"]</div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div data-toast="warning" style="display: none;">@TempData["Warning"]</div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div data-toast="info" style="display: none;">@TempData["Info"]</div>
+    }
+    
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/toast.js" asp-append-version="true"></script>
+    <script src="~/js/form-validation.js" asp-append-version="true"></script>
+    
+    <!-- Service Worker for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
