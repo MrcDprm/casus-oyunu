@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace casus_oyunu.Models
 {
@@ -36,9 +37,13 @@ namespace casus_oyunu.Models
         [StringLength(3)]
         public string? Currency { get; set; } = "TRY";
 
-        public bool IsActive => StartDate.HasValue && EndDate.HasValue && DateTime.UtcNow >= StartDate.Value && DateTime.UtcNow <= EndDate.Value;
+        [NotMapped]
+        public bool IsActive { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        
+        // Computed property for automatic activation check
+        public bool IsActiveComputed => StartDate.HasValue && EndDate.HasValue && DateTime.UtcNow >= StartDate.Value && DateTime.UtcNow <= EndDate.Value;
     }
 } 

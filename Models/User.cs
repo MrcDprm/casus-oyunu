@@ -27,5 +27,6 @@ namespace casus_oyunu.Models
         public ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
         public ICollection<RoomParticipant> RoomParticipants { get; set; } = new List<RoomParticipant>();
         public ICollection<GameRoom> CreatedRooms { get; set; } = new List<GameRoom>();
+        public UserTheme? UserTheme { get; set; }
     }
 } 

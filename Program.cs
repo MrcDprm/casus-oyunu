@@ -1,6 +1,4 @@
 using casus_oyunu.Data;
-using casus_oyunu.Hubs;
-using casus_oyunu.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -27,14 +25,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
-// SignalR
-builder.Services.AddSignalR();
-
-// Caching
-builder.Services.AddMemoryCache();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddScoped<ICacheService, CacheService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,7 +45,5 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapHub<GameHub>("/gameHub");
 
 app.Run();

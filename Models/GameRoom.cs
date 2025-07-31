@@ -32,6 +32,8 @@ namespace casus_oyunu.Models
         // Navigation Properties
         public ICollection<RoomParticipant> RoomParticipants { get; set; } = new List<RoomParticipant>();
         public ICollection<GameState> GameStates { get; set; } = new List<GameState>();
+        public ICollection<GameSession> GameSessions { get; set; } = new List<GameSession>();
         public ICollection<Vote> Votes { get; set; } = new List<Vote>();
+        public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
     }
 } 

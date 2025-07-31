@@ -1,46 +1,62 @@
-﻿<!DOCTYPE html>
-<html lang="tr">
+﻿@using casus_oyunu.Data
+@using casus_oyunu.Models
+@using Microsoft.EntityFrameworkCore
+@{
+    var user = User.Identity?.IsAuthenticated == true ? 
+        await Context.RequestServices.GetRequiredService<ApplicationDbContext>()
+            .Users.Include(u => u.UserSubscriptions)
+            .Include(u => u.UserTheme)
+            .FirstOrDefaultAsync(u => u.UserName == User.Identity.Name) : null;
+    
+    var activeSubscription = user?.UserSubscriptions?.FirstOrDefault(s => 
+        s.StartDate.HasValue && s.EndDate.HasValue && 
+        DateTime.UtcNow >= s.StartDate.Value && DateTime.UtcNow <= s.EndDate.Value);
+    var userTheme = user?.UserTheme?.ThemeType ?? ThemeType.Default;
+    var hasPremiumAccess = activeSubscription != null && 
+                          (activeSubscription.Type == SubscriptionType.Basic || 
+                           activeSubscription.Type == SubscriptionType.Premium || 
+                           activeSubscription.Type == SubscriptionType.Pro);
+}
+
+<!DOCTYPE html>
+<html lang="tr" data-theme="@userTheme.ToString().ToLower()">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0d6efd" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="casusmusunnesin?" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="msapplication-TileColor" content="#0d6efd" />
-    <meta name="msapplication-config" content="/browserconfig.xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - casusmusunnesin?</title>
     
-    <title>@ViewBag.Title - casusmusunnesin?</title>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Casus Oyunu">
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Manifest -->
+    <link rel="manifest" href="~/manifest.json">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
-    <link rel="apple-touch-icon" href="~/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="~/favicon-16x16.png" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico">
     
-    <!-- Stylesheets -->
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" as="script" />
-    <link rel="preload" href="~/js/site.js" as="script" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="~/css/themes/@(userTheme.ToString().ToLower()).css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
+<body class="theme-@userTheme.ToString().ToLower()">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="fas fa-user-secret me-2"></i>
-                    <span class="d-none d-sm-inline">casusmusunnesin?</span>
-                    <span class="d-sm-none">casus?</span>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-primary border-bottom box-shadow mb-3">
+            <div class="container-fluid px-3 px-md-4">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-search me-2"></i>casusmusunnesin?
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -125,15 +141,34 @@
                         }
                     </ul>
                 </div>
-        </div>
-    </nav>
+            </div>
+        </nav>
     </header>
     
     <div class="container-fluid px-3 px-md-4">
         <main role="main" class="pb-3">
-        @RenderBody()
-    </main>
+            @RenderBody()
+        </main>
     </div>
+
+    <!-- Reklam Alanları (Premium olmayan kullanıcılar için) -->
+    @if (!hasPremiumAccess)
+    {
+        <div class="ad-container-left" id="adLeft">
+            <div class="ad-placeholder">
+                <button type="button" class="btn-close ad-close-btn" onclick="closeAd('adLeft')" aria-label="Reklamı Kapat"></button>
+                <i class="fas fa-ad text-muted"></i>
+                <small class="text-muted">Reklam Alanı</small>
+            </div>
+        </div>
+        <div class="ad-container-right" id="adRight">
+            <div class="ad-placeholder">
+                <button type="button" class="btn-close ad-close-btn" onclick="closeAd('adRight')" aria-label="Reklamı Kapat"></button>
+                <i class="fas fa-ad text-muted"></i>
+                <small class="text-muted">Reklam Alanı</small>
+            </div>
+        </div>
+    }
 
     <footer class="border-top footer text-muted mt-auto">
         <div class="container-fluid px-3 px-md-4">
@@ -174,6 +209,31 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/toast.js" asp-append-version="true"></script>
     <script src="~/js/form-validation.js" asp-append-version="true"></script>
+    
+    <script>
+        function closeAd(adId) {
+            const adElement = document.getElementById(adId);
+            if (adElement) {
+                adElement.style.display = 'none';
+                // LocalStorage'a kaydet
+                localStorage.setItem(adId, 'closed');
+            }
+        }
+        
+        // Sayfa yüklendiğinde kapalı reklamları kontrol et
+        document.addEventListener('DOMContentLoaded', function() {
+            const adLeft = document.getElementById('adLeft');
+            const adRight = document.getElementById('adRight');
+            
+            if (adLeft && localStorage.getItem('adLeft') === 'closed') {
+                adLeft.style.display = 'none';
+            }
+            
+            if (adRight && localStorage.getItem('adRight') === 'closed') {
+                adRight.style.display = 'none';
+            }
+        });
+    </script>
     
     <!-- Service Worker for PWA -->
     <script>

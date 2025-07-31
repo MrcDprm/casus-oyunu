@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using casus_oyunu.Data;
 
@@ -11,9 +12,11 @@ using casus_oyunu.Data;
 namespace casus_oyunu.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250729091505_userTheme")]
+    partial class userTheme
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,37 +24,6 @@ namespace casus_oyunu.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("casus_oyunu.Models.ChatMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("GameRoomId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("SenderParticipantId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameRoomId");
-
-                    b.HasIndex("SenderParticipantId");
-
-                    b.ToTable("ChatMessages");
-                });
 
             modelBuilder.Entity("casus_oyunu.Models.GameRoom", b =>
                 {
@@ -90,66 +62,10 @@ namespace casus_oyunu.Migrations
 
                     b.HasIndex("CreatorId");
 
+                    b.HasIndex("RoomCode")
+                        .IsUnique();
+
                     b.ToTable("GameRooms");
-                });
-
-            modelBuilder.Entity("casus_oyunu.Models.GameSession", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrentAnswer")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("CurrentAnswererId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CurrentQuestion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("CurrentQuestionerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DurationSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("GameFinished")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("GameRoomId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("GameRoomId1")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SpyParticipantId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("VotingEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Winner")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameRoomId");
-
-                    b.HasIndex("GameRoomId1");
-
-                    b.ToTable("GameSessions");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.GameState", b =>
@@ -191,37 +107,6 @@ namespace casus_oyunu.Migrations
                     b.ToTable("GameStates");
                 });
 
-            modelBuilder.Entity("casus_oyunu.Models.PlayerPosition", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RoomParticipantId")
-                        .HasColumnType("int");
-
-                    b.Property<float>("X")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Y")
-                        .HasColumnType("real");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoomParticipantId");
-
-                    b.ToTable("PlayerPositions");
-                });
-
             modelBuilder.Entity("casus_oyunu.Models.PlayerRole", b =>
                 {
                     b.Property<int>("Id")
@@ -257,29 +142,180 @@ namespace casus_oyunu.Migrations
                     b.Property<int>("GameRoomId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GameRoomId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId1")
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameRoomId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RoomParticipants");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.Tournament", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("EntryFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsPremiumOnly")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("PrizePool")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("RegistrationDeadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
+
+                    b.HasIndex("StartDate");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Tournaments");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.TournamentMatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("GameRoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Player1Id")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Player2Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Result")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Round")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TournamentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WinnerId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GameRoomId");
 
-                    b.HasIndex("GameRoomId1");
+                    b.HasIndex("Player1Id");
+
+                    b.HasIndex("Player2Id");
+
+                    b.HasIndex("TournamentId");
+
+                    b.HasIndex("WinnerId");
+
+                    b.ToTable("TournamentMatches");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.TournamentParticipant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("FinalRank")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentTransactionId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal?>("PrizeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TournamentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TournamentId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId1");
-
-                    b.ToTable("RoomParticipants");
+                    b.ToTable("TournamentParticipants");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.User", b =>
@@ -309,6 +345,12 @@ namespace casus_oyunu.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -356,9 +398,11 @@ namespace casus_oyunu.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Type");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSubscription");
+                    b.ToTable("UserSubscriptions");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.UserTheme", b =>
@@ -386,7 +430,7 @@ namespace casus_oyunu.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserTheme");
+                    b.ToTable("UserThemes");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.Vote", b =>
@@ -420,49 +464,15 @@ namespace casus_oyunu.Migrations
                     b.ToTable("Votes");
                 });
 
-            modelBuilder.Entity("casus_oyunu.Models.ChatMessage", b =>
-                {
-                    b.HasOne("casus_oyunu.Models.GameRoom", "GameRoom")
-                        .WithMany("ChatMessages")
-                        .HasForeignKey("GameRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("casus_oyunu.Models.RoomParticipant", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderParticipantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("GameRoom");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("casus_oyunu.Models.GameRoom", b =>
                 {
                     b.HasOne("casus_oyunu.Models.User", "Creator")
                         .WithMany("CreatedRooms")
                         .HasForeignKey("CreatorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Creator");
-                });
-
-            modelBuilder.Entity("casus_oyunu.Models.GameSession", b =>
-                {
-                    b.HasOne("casus_oyunu.Models.GameRoom", "GameRoom")
-                        .WithMany()
-                        .HasForeignKey("GameRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("casus_oyunu.Models.GameRoom", null)
-                        .WithMany("GameSessions")
-                        .HasForeignKey("GameRoomId1");
-
-                    b.Navigation("GameRoom");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.GameState", b =>
@@ -474,17 +484,6 @@ namespace casus_oyunu.Migrations
                         .IsRequired();
 
                     b.Navigation("GameRoom");
-                });
-
-            modelBuilder.Entity("casus_oyunu.Models.PlayerPosition", b =>
-                {
-                    b.HasOne("casus_oyunu.Models.RoomParticipant", "RoomParticipant")
-                        .WithMany()
-                        .HasForeignKey("RoomParticipantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RoomParticipant");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.PlayerRole", b =>
@@ -501,14 +500,79 @@ namespace casus_oyunu.Migrations
             modelBuilder.Entity("casus_oyunu.Models.RoomParticipant", b =>
                 {
                     b.HasOne("casus_oyunu.Models.GameRoom", "GameRoom")
-                        .WithMany()
+                        .WithMany("RoomParticipants")
                         .HasForeignKey("GameRoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("casus_oyunu.Models.GameRoom", null)
+                    b.HasOne("casus_oyunu.Models.User", "User")
                         .WithMany("RoomParticipants")
-                        .HasForeignKey("GameRoomId1");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GameRoom");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.Tournament", b =>
+                {
+                    b.HasOne("casus_oyunu.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.TournamentMatch", b =>
+                {
+                    b.HasOne("casus_oyunu.Models.GameRoom", "GameRoom")
+                        .WithMany()
+                        .HasForeignKey("GameRoomId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("casus_oyunu.Models.User", "Player1")
+                        .WithMany()
+                        .HasForeignKey("Player1Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("casus_oyunu.Models.User", "Player2")
+                        .WithMany()
+                        .HasForeignKey("Player2Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("casus_oyunu.Models.Tournament", "Tournament")
+                        .WithMany()
+                        .HasForeignKey("TournamentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("casus_oyunu.Models.User", "Winner")
+                        .WithMany()
+                        .HasForeignKey("WinnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("GameRoom");
+
+                    b.Navigation("Player1");
+
+                    b.Navigation("Player2");
+
+                    b.Navigation("Tournament");
+
+                    b.Navigation("Winner");
+                });
+
+            modelBuilder.Entity("casus_oyunu.Models.TournamentParticipant", b =>
+                {
+                    b.HasOne("casus_oyunu.Models.Tournament", "Tournament")
+                        .WithMany()
+                        .HasForeignKey("TournamentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("casus_oyunu.Models.User", "User")
                         .WithMany()
@@ -516,11 +580,7 @@ namespace casus_oyunu.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("casus_oyunu.Models.User", null)
-                        .WithMany("RoomParticipants")
-                        .HasForeignKey("UserId1");
-
-                    b.Navigation("GameRoom");
+                    b.Navigation("Tournament");
 
                     b.Navigation("User");
                 });
@@ -555,13 +615,13 @@ namespace casus_oyunu.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("casus_oyunu.Models.RoomParticipant", "Target")
+                    b.HasOne("casus_oyunu.Models.RoomParticipant", "TargetParticipant")
                         .WithMany()
                         .HasForeignKey("TargetParticipantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("casus_oyunu.Models.RoomParticipant", "Voter")
+                    b.HasOne("casus_oyunu.Models.RoomParticipant", "VoterParticipant")
                         .WithMany()
                         .HasForeignKey("VoterParticipantId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -569,17 +629,13 @@ namespace casus_oyunu.Migrations
 
                     b.Navigation("GameRoom");
 
-                    b.Navigation("Target");
+                    b.Navigation("TargetParticipant");
 
-                    b.Navigation("Voter");
+                    b.Navigation("VoterParticipant");
                 });
 
             modelBuilder.Entity("casus_oyunu.Models.GameRoom", b =>
                 {
-                    b.Navigation("ChatMessages");
-
-                    b.Navigation("GameSessions");
-
                     b.Navigation("GameStates");
 
                     b.Navigation("RoomParticipants");
