@@ -57,7 +57,9 @@
                 }
 
                 <div class="row mt-4">
-                    @foreach (var plan in subscriptionTypes)
+                    @if (ViewBag.SubscriptionTypes != null)
+                    {
+                        @foreach (var plan in ViewBag.SubscriptionTypes)
                     {
                         <div class="col-md-4 mb-4">
                             <div class="card h-100 @(activeSubscription?.Type == plan.Type ? "border-primary" : "")">
@@ -97,6 +99,7 @@
                                 </div>
                             </div>
                         </div>
+                    }
                     }
                 </div>
 

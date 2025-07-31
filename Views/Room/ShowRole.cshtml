@@ -1,29 +1,123 @@
 @{
-    ViewBag.Title = "Rolünü Gör";
+    ViewBag.Title = "Rolünüz";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var role = ViewBag.Role as casus_oyunu.Models.PlayerRole;
-    var room = ViewBag.Room as casus_oyunu.Models.GameRoom;
 }
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="spy-bg p-4 rounded shadow-sm text-center">
-                <h2 class="spy-title mb-3">Rolün</h2>
-                @if (role != null)
+
+@section Styles {
+    <style>
+        .role-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+
+        .role-card {
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ff88;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .role-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .spy-icon {
+            color: #ff0000;
+        }
+
+        .player-icon {
+            color: #00ff88;
+        }
+
+        .role-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .role-description {
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .assigned-word {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .back-button {
+            background: #00ff88;
+            color: black;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #00cc00;
+            transform: translateY(-2px);
+        }
+    </style>
+}
+
+        <div class="role-container">
+            <div class="role-card">
+                @if (ViewBag.Role != null)
                 {
-                    @if (role.IsSpy)
+                    <div class="player-name" style="font-size: 18px; margin-bottom: 15px; color: #00ff88;">
+                        <strong>@ViewBag.TargetPlayer</strong>
+                    </div>
+                    
+                    if (ViewBag.Role.IsSpy)
                     {
-                        <div class="alert alert-danger display-4">Sen <strong>CASUS</strong>'sun!</div>
-                        <div class="mt-3">Diğer oyuncuların ortak kelimesini bulmaya çalış!</div>
+                        <div class="role-icon spy-icon">🕵️</div>
+                        <div class="role-title">CASUS</div>
+                        <div class="role-description">
+                            Bu oyuncu casus! Diğer oyuncuların onu yakalamasına izin vermemeli. 
+                            Sorulara dikkatli cevap vermeli ve şüphe uyandırmamalı.
+                        </div>
                     }
                     else
                     {
-                        <div class="alert alert-success display-4">Kelimen: <strong>@role.AssignedWord</strong></div>
-                        <div class="mt-3">Casusu bulmaya çalış!</div>
+                        <div class="role-icon player-icon">👤</div>
+                        <div class="role-title">OYUNCU</div>
+                        <div class="role-description">
+                            Bu oyuncu normal bir oyuncu. Casusu bulmaya çalışmalı ve 
+                            sorularıyla onu yakalamaya çalışmalı.
+                        </div>
+                        <div class="assigned-word">
+                            <strong>Kelimeleri:</strong><br>
+                            @ViewBag.Role.AssignedWord
+                        </div>
                     }
                 }
-                <a href="@Url.Action("Lobby", "Room", new { code = room.RoomCode })" class="btn btn-secondary mt-4">Lobiye Dön</a>
-            </div>
-        </div>
+                else
+                {
+                    <div class="role-title">Hata</div>
+                    <div class="role-description">
+                        Rol henüz atanmamış veya bir hata oluştu.
+                    </div>
+                }
+        
+        <a href="/Room/Game2D?code=@ViewBag.RoomCode" class="back-button">
+            Oyuna Dön
+        </a>
     </div>
 </div> 

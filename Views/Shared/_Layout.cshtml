@@ -4,22 +4,12 @@
 @{
     var user = User.Identity?.IsAuthenticated == true ? 
         await Context.RequestServices.GetRequiredService<ApplicationDbContext>()
-            .Users.Include(u => u.UserSubscriptions)
-            .Include(u => u.UserTheme)
+            .Users
             .FirstOrDefaultAsync(u => u.UserName == User.Identity.Name) : null;
-    
-    var activeSubscription = user?.UserSubscriptions?.FirstOrDefault(s => 
-        s.StartDate.HasValue && s.EndDate.HasValue && 
-        DateTime.UtcNow >= s.StartDate.Value && DateTime.UtcNow <= s.EndDate.Value);
-    var userTheme = user?.UserTheme?.ThemeType ?? ThemeType.Default;
-    var hasPremiumAccess = activeSubscription != null && 
-                          (activeSubscription.Type == SubscriptionType.Basic || 
-                           activeSubscription.Type == SubscriptionType.Premium || 
-                           activeSubscription.Type == SubscriptionType.Pro);
 }
 
 <!DOCTYPE html>
-<html lang="tr" data-theme="@userTheme.ToString().ToLower()">
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -46,12 +36,9 @@
     <!-- Site CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     
-    <!-- Theme CSS -->
-    <link rel="stylesheet" href="~/css/themes/@(userTheme.ToString().ToLower()).css" asp-append-version="true" />
-    
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="theme-@userTheme.ToString().ToLower()">
+<body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-primary border-bottom box-shadow mb-3">
             <div class="container-fluid px-3 px-md-4">
@@ -87,7 +74,7 @@
                             </li>
                             <li class="nav-item d-none d-lg-block">
                                 <a class="nav-link text-light" asp-area="" asp-controller="Premium" asp-action="Index">
-                                    <i class="fas fa-crown text-warning"></i> Premium
+                                    <i class="fas fa-chart-bar text-warning"></i> İstatistikler
                                 </a>
                             </li>
                             <li class="nav-item dropdown">
@@ -98,45 +85,22 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <li><a class="dropdown-item d-flex align-items-center" asp-controller="Premium" asp-action="Statistics">
-                                        <i class="fas fa-chart-line me-2"></i> İstatistiklerim
-                                    </a></li>
-                                    <li class="d-lg-none"><a class="dropdown-item d-flex align-items-center" asp-controller="Premium" asp-action="Index">
-                                        <i class="fas fa-crown text-warning me-2"></i> Premium
+                                        <i class="fas fa-chart-line me-2"></i>Oyun İstatistikleri
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="dropdown-item d-flex align-items-center">
-                                                <i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap
-                                            </button>
-                                        </form>
-                                    </li>
+                                    <li><a class="dropdown-item d-flex align-items-center" asp-controller="Account" asp-action="Logout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                                    </a></li>
                                 </ul>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Room" asp-action="Join">
-                                    <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>
-                                    <span class="d-none d-md-inline">Oyuna Katıl</span>
-                                    <span class="d-md-none">Katıl</span>
-                                </a>
+                                <a class="nav-link text-light" asp-area="" asp-controller="Account" asp-action="Login">Giriş Yap</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Login">
-                                    <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>
-                                    <span class="d-none d-md-inline">Giriş Yap</span>
-                                    <span class="d-md-none">Giriş</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Register">
-                                    <i class="fas fa-user-plus me-1 d-none d-sm-inline"></i>
-                                    <span class="d-none d-md-inline">Kayıt Ol</span>
-                                    <span class="d-md-none">Kayıt</span>
-                                </a>
+                                <a class="nav-link text-light" asp-area="" asp-controller="Account" asp-action="Register">Kayıt Ol</a>
                             </li>
                         }
                     </ul>
@@ -144,112 +108,20 @@
             </div>
         </nav>
     </header>
-    
-    <div class="container-fluid px-3 px-md-4">
+    <div class="container-fluid">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <!-- Reklam Alanları (Premium olmayan kullanıcılar için) -->
-    @if (!hasPremiumAccess)
-    {
-        <div class="ad-container-left" id="adLeft">
-            <div class="ad-placeholder">
-                <button type="button" class="btn-close ad-close-btn" onclick="closeAd('adLeft')" aria-label="Reklamı Kapat"></button>
-                <i class="fas fa-ad text-muted"></i>
-                <small class="text-muted">Reklam Alanı</small>
-            </div>
-        </div>
-        <div class="ad-container-right" id="adRight">
-            <div class="ad-placeholder">
-                <button type="button" class="btn-close ad-close-btn" onclick="closeAd('adRight')" aria-label="Reklamı Kapat"></button>
-                <i class="fas fa-ad text-muted"></i>
-                <small class="text-muted">Reklam Alanı</small>
-            </div>
-        </div>
-    }
-
-    <footer class="border-top footer text-muted mt-auto">
-        <div class="container-fluid px-3 px-md-4">
-            <div class="row align-items-center">
-                <div class="col-12 col-md-6 text-center text-md-start">
-                    &copy; 2025 - casusmusunnesin?
-                </div>
-                <div class="col-12 col-md-6 text-center text-md-end">
-                    <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none">
-                        <i class="fas fa-shield-alt me-1"></i>Gizlilik
-                    </a>
-                </div>
-            </div>
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - casusmusunnesin? - <a asp-area="" asp-controller="Home" asp-action="Privacy">Gizlilik</a>
         </div>
     </footer>
-    
-    <!-- Toast Messages from TempData -->
-    @if (TempData["Success"] != null)
-    {
-        <div data-toast="success" style="display: none;">@TempData["Success"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div data-toast="error" style="display: none;">@TempData["Error"]</div>
-    }
-    @if (TempData["Warning"] != null)
-    {
-        <div data-toast="warning" style="display: none;">@TempData["Warning"]</div>
-    }
-    @if (TempData["Info"] != null)
-    {
-        <div data-toast="info" style="display: none;">@TempData["Info"]</div>
-    }
-    
-    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/toast.js" asp-append-version="true"></script>
-    <script src="~/js/form-validation.js" asp-append-version="true"></script>
-    
-    <script>
-        function closeAd(adId) {
-            const adElement = document.getElementById(adId);
-            if (adElement) {
-                adElement.style.display = 'none';
-                // LocalStorage'a kaydet
-                localStorage.setItem(adId, 'closed');
-            }
-        }
-        
-        // Sayfa yüklendiğinde kapalı reklamları kontrol et
-        document.addEventListener('DOMContentLoaded', function() {
-            const adLeft = document.getElementById('adLeft');
-            const adRight = document.getElementById('adRight');
-            
-            if (adLeft && localStorage.getItem('adLeft') === 'closed') {
-                adLeft.style.display = 'none';
-            }
-            
-            if (adRight && localStorage.getItem('adRight') === 'closed') {
-                adRight.style.display = 'none';
-            }
-        });
-    </script>
-    
-    <!-- Service Worker for PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
-    </script>
-    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -437,14 +437,60 @@ namespace casus_oyunu.Controllers
             var participants = await _context.RoomParticipants
                 .Where(p => p.GameRoomId == room.Id)
                 .Include(p => p.User)
+                .Select(p => new { 
+                    p.Id, 
+                    p.UserId, 
+                    User = new { p.User.UserName, p.User.Email }
+                })
                 .ToListAsync();
             
             var playerPositions = await _context.PlayerPositions
                 .Where(pp => participants.Select(p => p.Id).Contains(pp.RoomParticipantId))
+                .Select(pp => new { pp.RoomParticipantId, pp.X, pp.Y, pp.Color })
                 .ToListAsync();
             
-            ViewBag.Room = room;
-            ViewBag.GameSession = gameSession;
+            // Eğer oyuncuların pozisyonu yoksa, varsayılan pozisyonlar oluştur
+            if (!playerPositions.Any())
+            {
+                var colors = new[] { "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF", "#FF8800", "#8800FF" };
+                var random = new Random();
+                
+                for (int i = 0; i < participants.Count; i++)
+                {
+                    var participant = participants[i];
+                    var position = new PlayerPosition
+                    {
+                        RoomParticipantId = participant.Id,
+                        X = 100 + (i * 100), // Yatay dağılım
+                        Y = 300 + (i % 2 * 100), // Dikey dağılım
+                        Color = colors[i % colors.Length],
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _context.PlayerPositions.Add(position);
+                }
+                await _context.SaveChangesAsync();
+                
+                // Güncellenmiş pozisyonları al
+                playerPositions = await _context.PlayerPositions
+                    .Where(pp => participants.Select(p => p.Id).Contains(pp.RoomParticipantId))
+                    .Select(pp => new { pp.RoomParticipantId, pp.X, pp.Y, pp.Color })
+                    .ToListAsync();
+            }
+            
+            ViewBag.Room = new { room.Id, room.RoomCode };
+            ViewBag.GameSession = new { 
+                gameSession?.Id, 
+                gameSession?.StartedAt, 
+                gameSession?.DurationSeconds, 
+                gameSession?.CurrentQuestion, 
+                gameSession?.CurrentAnswer, 
+                gameSession?.CurrentQuestionerId, 
+                gameSession?.CurrentAnswererId, 
+                gameSession?.SpyParticipantId, 
+                gameSession?.VotingEnabled, 
+                gameSession?.GameFinished, 
+                gameSession?.Winner 
+            };
             ViewBag.Participants = participants;
             ViewBag.PlayerPositions = playerPositions;
             
@@ -456,30 +502,29 @@ namespace casus_oyunu.Controllers
         public async Task<IActionResult> AskQuestion(string code, string question, int targetParticipantId)
         {
             if (string.IsNullOrWhiteSpace(code))
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oda kodu gerekli" });
             
             var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == code);
             if (room == null)
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oda bulunamadı" });
             
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var participant = await _context.RoomParticipants
                 .FirstOrDefaultAsync(p => p.GameRoomId == room.Id && p.UserId == userId);
             
             if (participant == null)
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oyuncu bulunamadı" });
             
             var gameSession = await _context.GameSessions
                 .FirstOrDefaultAsync(s => s.GameRoomId == room.Id && !s.GameFinished);
             
             if (gameSession == null)
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Aktif oyun bulunamadı" });
             
             // Sadece sıradaki kişi soru sorabilir
             if (gameSession.CurrentQuestionerId != participant.Id)
             {
-                TempData["GameError"] = "Sıra sizde değil.";
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Sıra sizde değil." });
             }
             
             // Hedef oyuncu geçerli mi?
@@ -488,8 +533,7 @@ namespace casus_oyunu.Controllers
             
             if (targetParticipant == null)
             {
-                TempData["GameError"] = "Geçersiz hedef oyuncu.";
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Geçersiz hedef oyuncu." });
             }
             
             // Soru ve cevap oluştur
@@ -500,7 +544,7 @@ namespace casus_oyunu.Controllers
             _context.GameSessions.Update(gameSession);
             await _context.SaveChangesAsync();
             
-            return RedirectToAction("Game2D", new { code });
+            return Json(new { success = true, answer = gameSession.CurrentAnswer });
         }
 
         [HttpPost]
@@ -508,18 +552,18 @@ namespace casus_oyunu.Controllers
         public async Task<IActionResult> Vote(string code, int targetParticipantId)
         {
             if (string.IsNullOrWhiteSpace(code))
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oda kodu gerekli" });
             
             var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == code);
             if (room == null)
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oda bulunamadı" });
             
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var participant = await _context.RoomParticipants
                 .FirstOrDefaultAsync(p => p.GameRoomId == room.Id && p.UserId == userId);
             
             if (participant == null)
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Oyuncu bulunamadı" });
             
             // Oyuncu zaten oy kullandı mı?
             var existingVote = await _context.Votes
@@ -527,8 +571,7 @@ namespace casus_oyunu.Controllers
             
             if (existingVote != null)
             {
-                TempData["VoteError"] = "Zaten oy kullandınız.";
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Zaten oy kullandınız." });
             }
             
             // Hedef katılımcı geçerli mi?
@@ -537,8 +580,7 @@ namespace casus_oyunu.Controllers
             
             if (target == null)
             {
-                TempData["VoteError"] = "Geçersiz oyuncu seçimi.";
-                return RedirectToAction("Game2D", new { code });
+                return Json(new { success = false, message = "Geçersiz oyuncu seçimi." });
             }
             
             var vote = new Vote
@@ -558,10 +600,11 @@ namespace casus_oyunu.Controllers
             
             if (totalVotes >= totalParticipants)
             {
-                return await FinishGameInternal(code, room.Id);
+                await FinishGameInternal(code, room.Id);
+                return Json(new { success = true, message = "Oyun bitti!" });
             }
             
-            return RedirectToAction("Game2D", new { code });
+            return Json(new { success = true, message = "Oyunuz kaydedildi." });
         }
 
         [HttpPost]
@@ -651,6 +694,184 @@ namespace casus_oyunu.Controllers
             var answers = new[] { "Evet", "Hayır", "Belki", "Bilmiyorum", "Muhtemelen", "Kesinlikle" };
             var random = new Random();
             return answers[random.Next(answers.Length)];
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePosition(string roomCode, float x, float y)
+        {
+            if (string.IsNullOrWhiteSpace(roomCode))
+                return Json(new { success = false, message = "Oda kodu gerekli" });
+            
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == roomCode);
+            
+            if (room == null)
+                return Json(new { success = false, message = "Oda bulunamadı" });
+
+            var participant = await _context.RoomParticipants
+                .FirstOrDefaultAsync(p => p.GameRoomId == room.Id && p.UserId == userId);
+            
+            if (participant == null)
+                return Json(new { success = false, message = "Oyuncu bulunamadı" });
+            
+            var position = await _context.PlayerPositions
+                .FirstOrDefaultAsync(p => p.RoomParticipantId == participant.Id);
+            
+            if (position == null)
+            {
+                position = new PlayerPosition
+                {
+                    RoomParticipantId = participant.Id,
+                    X = x,
+                    Y = y,
+                    Color = "#FF0000",
+                    LastUpdated = DateTime.UtcNow
+                };
+                _context.PlayerPositions.Add(position);
+            }
+            else
+            {
+                position.X = x;
+                position.Y = y;
+                position.LastUpdated = DateTime.UtcNow;
+                _context.PlayerPositions.Update(position);
+            }
+            
+            await _context.SaveChangesAsync();
+            
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(string roomCode, string message)
+        {
+            if (string.IsNullOrWhiteSpace(roomCode) || string.IsNullOrWhiteSpace(message))
+                return Json(new { success = false, message = "Oda kodu ve mesaj gerekli" });
+            
+            var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == roomCode);
+            if (room == null)
+                return Json(new { success = false, message = "Oda bulunamadı" });
+            
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var participant = await _context.RoomParticipants
+                .FirstOrDefaultAsync(p => p.GameRoomId == room.Id && p.UserId == userId);
+            
+            if (participant == null)
+                return Json(new { success = false, message = "Oyuncu bulunamadı" });
+            
+            var chatMessage = new ChatMessage
+            {
+                GameRoomId = room.Id,
+                SenderParticipantId = participant.Id,
+                Message = message,
+                SentAt = DateTime.UtcNow
+            };
+            
+            _context.ChatMessages.Add(chatMessage);
+            await _context.SaveChangesAsync();
+            
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ShowRole(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return RedirectToAction("Join");
+            
+            var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == code);
+            if (room == null)
+                return RedirectToAction("Join");
+            
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var currentParticipant = await _context.RoomParticipants
+                .FirstOrDefaultAsync(p => p.GameRoomId == room.Id && p.UserId == userId);
+            
+            if (currentParticipant == null)
+                return RedirectToAction("Join");
+            
+            // Sadece kendi rolünü göster
+            var playerRole = await _context.PlayerRoles
+                .FirstOrDefaultAsync(pr => pr.RoomParticipantId == currentParticipant.Id);
+            
+            if (playerRole == null)
+            {
+                TempData["RoleError"] = "Rol henüz atanmamış.";
+                return RedirectToAction("Game2D", new { code });
+            }
+            
+            // Kendi bilgilerini al
+            var currentParticipantWithUser = await _context.RoomParticipants
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == currentParticipant.Id);
+            
+            ViewBag.Role = playerRole;
+            ViewBag.TargetPlayer = currentParticipantWithUser?.User?.UserName ?? "Bilinmeyen Oyuncu";
+            ViewBag.RoomCode = code;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetGameState(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return Json(new { success = false, message = "Oda kodu gerekli" });
+            
+            var room = await _context.GameRooms.FirstOrDefaultAsync(r => r.RoomCode == code);
+            if (room == null)
+                return Json(new { success = false, message = "Oda bulunamadı" });
+            
+            var gameSession = await _context.GameSessions
+                .FirstOrDefaultAsync(s => s.GameRoomId == room.Id && !s.GameFinished);
+            
+            if (gameSession == null)
+                return Json(new { success = false, message = "Aktif oyun bulunamadı" });
+            
+            var participantIds = await _context.RoomParticipants
+                .Where(p => p.GameRoomId == room.Id)
+                .Select(p => p.Id)
+                .ToListAsync();
+            
+            var playerPositions = await _context.PlayerPositions
+                .Where(pp => participantIds.Contains(pp.RoomParticipantId))
+                .Select(pp => new { pp.RoomParticipantId, pp.X, pp.Y, pp.Color })
+                .ToListAsync();
+            
+            // Chat mesajlarını al
+            var chatMessages = await _context.ChatMessages
+                .Where(cm => cm.GameRoomId == room.Id)
+                .Include(cm => cm.Sender)
+                .ThenInclude(s => s.User)
+                .OrderByDescending(cm => cm.SentAt)
+                .Take(50)
+                .OrderBy(cm => cm.SentAt)
+                .Select(cm => new { 
+                    message = cm.Message, 
+                    senderName = cm.Sender.User.UserName,
+                    sentAt = cm.SentAt
+                })
+                .ToListAsync();
+            
+            return Json(new { 
+                success = true, 
+                gameSession = new {
+                    gameSession.Id,
+                    gameSession.StartedAt,
+                    gameSession.DurationSeconds,
+                    gameSession.CurrentQuestion,
+                    gameSession.CurrentAnswer,
+                    gameSession.CurrentQuestionerId,
+                    gameSession.CurrentAnswererId,
+                    gameSession.SpyParticipantId,
+                    gameSession.VotingEnabled,
+                    gameSession.GameFinished,
+                    gameSession.Winner
+                },
+                playerPositions = playerPositions,
+                chatMessages = chatMessages
+            });
         }
     }
 } 

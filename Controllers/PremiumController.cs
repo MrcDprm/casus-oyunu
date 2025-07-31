@@ -43,6 +43,15 @@ namespace casus_oyunu.Controllers
             ViewBag.TotalGames = totalGames;
             ViewBag.UserName = user.UserName;
 
+            // Abonelik tipleri
+            var subscriptionTypes = new List<object>
+            {
+                new { Type = "Basic", Name = "Temel", Price = 9.99, Features = new[] { "Reklamsız deneyim", "Temel istatistikler", "Özel temalar" } },
+                new { Type = "Premium", Name = "Premium", Price = 19.99, Features = new[] { "Tüm temel özellikler", "Detaylı istatistikler", "Turnuva katılımı", "Öncelikli destek" } },
+                new { Type = "Pro", Name = "Pro", Price = 29.99, Features = new[] { "Tüm premium özellikler", "Özel oda oluşturma", "Gelişmiş analitikler", "7/24 destek" } }
+            };
+            ViewBag.SubscriptionTypes = subscriptionTypes;
+
             return View();
         }
 
